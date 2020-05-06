@@ -1,23 +1,10 @@
 # %%
 import pandas as pd
-
 import numpy as np
 import seaborn as sns
-from statsmodels.formula.api import ols
-from statsmodels.stats.multitest import multipletests
-
-from scipy import stats
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-# plt.style.use('seaborn-white')
-import matplotlib.lines as mlines
-
-# from mpl_toolkits.mplot3d import axes3d, Axes3D
 current_palette = sns.color_palette()
-
 # %% read the data
-
-# df_pvalues = pd.read_csv('DEC2019_UPDATED_RESULTS\\ALD_DMRs_Annotated_Dec2019.csv')
 pvalues = pd.read_csv('../../../Data/Methylation/ALD_Limma_Final_Dec2019_CHR.csv')
 pvalues['log10p'] = -np.log10(pvalues.Nominal_P)
 pvalues['absdb'] = abs(pvalues.Delta_Beta)
@@ -36,7 +23,6 @@ betas = betas.transpose().sort_index()
 betas.columns = colnames
 
 # add hardcoded phenotypes etc
-
 betas['pheno'] = ['CALD', 'AMN', 'CALD', 'AMN', 'CALD', 'AMN', 'CALD', 'AMN', 'CALD', 'CALD', 'AMN', 'AMN']
 betas.pheno = betas.pheno.astype('category')
 betas['fam'] = [1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6, 3]
@@ -71,7 +57,6 @@ tbl_annot = pd.concat([tbl_both, tbl_2.sort_values('abs_db', ascending=False)[0:
 #%% define function to remove nested lists
 from collections import Iterable
 
-
 def single_list(list, ignore_types=(str)):
     for item in list:
         if isinstance(item, Iterable) and not isinstance(item, ignore_types):
@@ -80,11 +65,10 @@ def single_list(list, ignore_types=(str)):
             yield item
 # %% plot DMRs from coordinates to cpgs to betas
 plt.close('all')
-
+# determine unique ranges
 uranges = tbl_annot.coord.unique()
-for r in uranges:
-    print(r)
 
+for r in uranges:
     chrom = int(r.split(':')[0].strip('chr'))
     minr = int(r.split(':')[1].split('-')[0])
     maxr = int(r.split(':')[1].split('-')[1])
@@ -95,9 +79,11 @@ for r in uranges:
 
     rng = pvalues.loc[_selection].copy()
 
+    # a range need to have at least 2 or more CpGs
     if rng.shape[0] < 2:
         continue
 
+    # copy coordinates of CpGs and create Beta table
     posx = rng.Coordinate.values
     _betas = betas[rng.CpG].copy()
     betasT = pd.DataFrame(_betas.unstack().copy())
@@ -106,6 +92,7 @@ for r in uranges:
     nrrows = rng.shape[0]
     xpos = [j for j in single_list([[posx[i]] * 12 for i in range(nrrows)])]
 
+    # hard code the phenotypes and families in the beta table
     betasT['X'] = xpos
     betasT['pheno'] = ['CALD', 'non-CALD', 'CALD', 'non-CALD', 'CALD', 'non-CALD', 'CALD', 'non-CALD', 'CALD', 'CALD', 'non-CALD',
                        'non-CALD'] * nrrows
@@ -113,15 +100,18 @@ for r in uranges:
     betasT.pheno = betasT.pheno.astype('category')
     betasT.fam = betasT.fam.astype('category')
 
+    # sort on coordinate
     betasT = betasT.sort_values(['X'])
 
+    # find gene name, if any
     if rng.UCSC_RefGene_Name.any():
         txt = rng.UCSC_RefGene_Name.any()
         txt = txt.split(';')[0]
     else:
         txt = r
 
-   f, ax = plt.subplots(figsize=(6, 6))
+    # create the plot
+    f, ax = plt.subplots(figsize=(6, 6))
 
     sns.scatterplot(x='X', y='beta', style='fam', palette=[current_palette[f] for f in range(6)], data=betasT,
                     hue='fam', legend=False, ax=ax)
@@ -131,7 +121,7 @@ for r in uranges:
     handles, labels = ax.axes.get_legend_handles_labels()
     ax.set(xlabel='relative chromosomal coordinate (chr{0})'.format(chrom))
     plt.title(txt)
-    
+
     sns.despine(offset=10, trim=True)
 
     plt.show()

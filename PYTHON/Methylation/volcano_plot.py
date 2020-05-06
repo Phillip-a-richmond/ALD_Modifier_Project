@@ -3,16 +3,7 @@ import pandas as pd
 
 import numpy as np
 import seaborn as sns
-from statsmodels.formula.api import ols
-from statsmodels.stats.multitest import multipletests
-
-from scipy import stats
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-# plt.style.use('seaborn-white')
-import matplotlib.lines as mlines
-
-# from mpl_toolkits.mplot3d import axes3d, Axes3D
 current_palette = sns.color_palette()
 
 # %% read the data
@@ -81,10 +72,12 @@ sns.scatterplot(x='Delta_Beta', y='log10p', style='in_dmr', alpha=1, data=df_pva
 sns.scatterplot(x='Delta_Beta', y='log10p', size=5, marker='x', alpha=1,data=df_pval_cp.loc[df_pval_cp.grp == 5, :], palette=current_palette[1],legend=False)
 p = sns.scatterplot(x='Delta_Beta', y='log10p', style='in_dmr', alpha=0.01, data=df_pval_cp.loc[df_pval_cp.grp == 3, :],palette=current_palette[0],legend=False)
 
+# use markers to indicate if point is in a DMR or not
 mrk_y = plt.scatter([],[],color='red',marker='x',label='Yes')
 mrk_n = plt.scatter([],[],color='black',marker='o',label='No')
 plt.legend(handles=[mrk_n,mrk_y],frameon=False,title='In DMR')
 
+# set axis limits
 ylim = p.axes.get_ylim()
 p.axes.set_xlim([-0.2, 0.2])
 xlim = p.axes.get_xlim()
